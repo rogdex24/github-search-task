@@ -5,6 +5,9 @@ test.py
 # token 
 config.py
 
+# trash csv files
+*.csv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

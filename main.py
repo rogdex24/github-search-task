@@ -2,7 +2,13 @@ import requests
 import pandas as pd
 import config
 from email_scrape import get_email
+from tqdm import tqdm
 from timeit import default_timer as timer
+from datetime import datetime
+
+
+now = datetime.now()
+timestamp = datetime.timestamp(now)
 
 start = timer()
 
@@ -10,12 +16,12 @@ headers = {
     "authorization": f"Bearer {config.api_token}"
 }
 
-url = "https://api.github.com/search/users?q={}"
+URL = "https://api.github.com/search/users?q={}"
 
 query_params = {
     "keyword": "hackathon",
     "location": "India",
-    "followers": ">1",
+    "followers": ">20",
     "repos": ">2",
     "language": "Python",
 }
@@ -23,6 +29,11 @@ query_params = {
 
 def create_query(query_params):
     """ Constructs the query from given parameters """
+
+    if not any(query_params.values()):
+        print("Insufficient search parameters given")
+        print("Please input atleast one parameter")
+        exit()
 
     query = ""
     for key in query_params.keys():
@@ -36,28 +47,28 @@ def create_query(query_params):
     return query
 
 
-def get_user_list(query, headers):
+def get_user_list(query):
     """ API request for searching the users with given parameters """
 
-    response = requests.get(url.format(query), headers=headers)
+    response = requests.get(URL.format(query), headers=headers)
+    if response.status_code != 200:
+        print("{} Bad Request".format(response.status_code))
+        exit()
     user_response = response.json()
     user_list = user_response["items"]
-    return user_list
+    user_count = user_response["total_count"]
+    return user_list, user_count
 
 
 def get_user_info(user_list):
     """ Populates the user information """
-    # Get API url of all users
-    user_urls = []
-    for user in user_list:
-        user_urls.append(user["url"])
 
-    # Get data of all users
     user_info = []
     user_info_params = ["name", "login",
                         "bio", "location", "email", "html_url"]
 
-    for api_url in user_urls:
+    for user in tqdm(user_list):
+        api_url = user["url"]
         data = []
         resp = requests.get(api_url, headers=headers)
         user = resp.json()
@@ -76,21 +87,27 @@ def get_user_info(user_list):
     return user_info
 
 
+def convert_to_csv(data):
+    """ Writes the user data obtained to a csv file """
+
+    user_df = pd.DataFrame(data, columns=[
+        "Name", "Github Handle", "Bio", "Location", "Email", "Github Link"])
+
+    if data:
+        filename = f'user_info_{timestamp}.csv'
+        user_df.to_csv(filename, index=False)
+        print("Saved the results to {}".format(filename))
+
+
 query = create_query(query_params)
 
-user_list = get_user_list(query, headers)
-print(f"Found {len(user_list)} users")
+user_list, user_count = get_user_list(query)
+
+print(f"Found {user_count} users")
 
 user_info = get_user_info(user_list)
 
-
-# Parsing into csv
-user_df = pd.DataFrame(user_info, columns=[
-                       "Name", "Github Handle", "Bio", "Location", "Email", "Github Link"])
-
-user_df.to_csv('user_info.csv', index=False)
-
-print("Saved the results to user_info.csv")
+convert_to_csv(user_info)
 
 end = timer()
-print(end - start, "s")
+print(end - start, end="s")
