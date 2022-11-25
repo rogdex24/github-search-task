@@ -21,7 +21,7 @@ URL = "https://api.github.com/search/users?q={}"
 query_params = {
     "keyword": "hackathon",
     "location": "India",
-    "followers": ">20",
+    "followers": ">1",
     "repos": ">2",
     "language": "Python",
 }
@@ -110,4 +110,4 @@ user_info = get_user_info(user_list)
 convert_to_csv(user_info)
 
 end = timer()
-print(end - start, end="s")
+print("normal:", end - start, "s")

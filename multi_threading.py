@@ -124,7 +124,7 @@ user_df.to_csv('user_info_multi.csv', index=False)
 print("Saved the results to user_info.csv")
 
 end = timer()
-print(end - start, "s")
+print("multi-threaded:", end - start, "s")
 
 # order won't be the same
 

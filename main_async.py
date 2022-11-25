@@ -129,4 +129,4 @@ print(f"Found {user_count} users")
 asyncio.run(main())
 
 
-print("-- %s s --" % (timer() - start_time))
+print("async:", timer() - start_time, "s")
