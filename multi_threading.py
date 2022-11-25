@@ -49,12 +49,13 @@ def get_user_list(query, headers):
     return user_list
 
 
-def get_user_info(user_url):
+def get_user_info(idx, user_url):
     """ Populates the user information """
 
     # Get data of all users
     user_info_params = ["name", "login",
                         "bio", "location", "email", "html_url"]
+    start_user = timer()
 
     data = []
     resp = requests.get(user_url, headers=headers)
@@ -69,22 +70,24 @@ def get_user_info(user_url):
         else:
             data.append(user[param])
 
-    user_info.append(data)
+    print("->", timer() - start_user, end="s\n")
+    user_info[idx]= data
 
 
 def fill_queue_and_list(user_list):
     # Get API url of all users
     user_urls = []
-    for user in user_list:
+    for idx, user in enumerate(user_list):
         user_urls.append(user["url"])
-        queue.put(user["url"])
+        queue.put( [idx, user["url"]] )
 
 
 def worker():
     while not queue.empty():
-        user_url = queue.get()
-        get_user_info(user_url)
+        user = queue.get()
+        get_user_info(user[0], user[1])
 
+""" main """
 
 query = create_query(query_params)
 
@@ -94,12 +97,12 @@ print(f"Found {user_count} users")
 
 user_urls = fill_queue_and_list(user_list)
 
-user_info = []
+user_info = [[]]*user_count
 
 thread_list = []
 
 # Creating n/2 threads
-for t in range(user_count//2):
+for t in range(5):
     thread = threading.Thread(target=worker)
     thread_list.append(thread)
 
